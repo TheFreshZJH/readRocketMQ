@@ -88,6 +88,10 @@ public class ProcessQueue {
                 this.treeMapLock.readLock().lockInterruptibly();
                 try {
                     if (!msgTreeMap.isEmpty()) {
+                        /**
+                         * 判断需要被消费的map中第一条消息是否超过15分钟了，超过十五分钟就需要进行清理
+                         * （猜测，消费的顺序就是从msgTreeMap中消费第一条消息，消费完后remove）
+                         * */
                         String consumeStartTimeStamp = MessageAccessor.getConsumeStartTimeStamp(msgTreeMap.firstEntry().getValue());
                         if (StringUtils.isNotEmpty(consumeStartTimeStamp) && System.currentTimeMillis() - Long.parseLong(consumeStartTimeStamp) > pushConsumer.getConsumeTimeout() * 60 * 1000) {
                             msg = msgTreeMap.firstEntry().getValue();
@@ -105,7 +109,9 @@ public class ProcessQueue {
             }
 
             try {
-
+                /**
+                 * 将本地需要清理的消息发回远程的消息队列中
+                 * */
                 pushConsumer.sendMessageBack(msg, 3);
                 log.info("send expire msg back. topic={}, msgId={}, storeHost={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getMsgId(), msg.getStoreHost(), msg.getQueueId(), msg.getQueueOffset());
                 try {
@@ -113,6 +119,9 @@ public class ProcessQueue {
                     try {
                         if (!msgTreeMap.isEmpty() && msg.getQueueOffset() == msgTreeMap.firstKey()) {
                             try {
+                                /**
+                                 * 将需要清理的消息从本地msgTreeMap中remove
+                                 * */
                                 removeMessage(Collections.singletonList(msg));
                             } catch (Exception e) {
                                 log.error("send expired msg exception", e);

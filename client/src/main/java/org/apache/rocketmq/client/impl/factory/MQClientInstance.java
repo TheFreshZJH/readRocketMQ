@@ -233,10 +233,20 @@ public class MQClientInstance {
                         this.mQClientAPIImpl.fetchNameServerAddr();
                     }
                     // Start request-response channel
+                    /**
+                     * 开始和远程消息队列进行连接，使用Netty来实现
+                     * */
                     this.mQClientAPIImpl.start();
                     // Start various schedule tasks
+                    /**
+                     * 起了另外5个线程
+                     * 周期性地去和远程消息队列去更新NameServer的地址、Topic的路由、偏移量，周期性地调整线程池、发送心跳
+                     * */
                     this.startScheduledTask();
                     // Start pull service
+                    /**
+                     * pullMessage方法的入口，不过会先运行PullMessageService类继承的接口ServiceThread的start方法
+                     * */
                     this.pullMessageService.start();
                     // Start rebalance service
                     this.rebalanceService.start();
@@ -868,7 +878,9 @@ public class MQClientInstance {
         if (null == group || null == consumer) {
             return false;
         }
-
+        /**
+         * 如果原来就存在以传进来的group为key的consumer了，也代表注册失败
+         * */
         MQConsumerInner prev = this.consumerTable.putIfAbsent(group, consumer);
         if (prev != null) {
             log.warn("the consumer group[" + group + "] exist already.");

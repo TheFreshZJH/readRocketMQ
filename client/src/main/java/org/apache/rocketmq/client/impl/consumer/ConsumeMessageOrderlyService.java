@@ -98,6 +98,9 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 @Override
                 public void run() {
                     try {
+                        /**
+                         * 只要还没消费完消息，就周期性地去将其他也需要进行消费的队列锁住（为了保证顺序）
+                         * */
                         ConsumeMessageOrderlyService.this.lockMQPeriodically();
                     } catch (Throwable e) {
                         log.error("scheduleAtFixedRate lockMQPeriodically exception", e);

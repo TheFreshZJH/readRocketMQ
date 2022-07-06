@@ -94,6 +94,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             @Override
             public void run() {
                 try {
+                    /**
+                     * 定期清理过期消息
+                     * */
                     cleanExpireMsg();
                 } catch (Throwable e) {
                     log.error("scheduleAtFixedRate cleanExpireMsg exception", e);
@@ -234,6 +237,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         while (it.hasNext()) {
             Map.Entry<MessageQueue, ProcessQueue> next = it.next();
             ProcessQueue pq = next.getValue();
+            /**
+             * 清理过期消息
+             * */
             pq.cleanExpiredMsg(this.defaultMQPushConsumer);
         }
     }
